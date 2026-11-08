@@ -1,0 +1,77 @@
+name: Publish
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.github/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Run the checks and compute the version without tagging
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Staticcheck
+        uses: dominikh/staticcheck-action@v1
+        with:
+          version: "2026.2.2"
+          install-go: false
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.15.0
+
+      - name: Test
+        run: go test ./... -race -shuffle=on
+
+      - name: Build
+        run: go build ./...
+
+      - name: Compute next version
+        id: version
+        run: |
+          git fetch --tags --force
+          NEW=$(node .github/scripts/next_version.mjs)
+          echo "new_version=$NEW" >> "$GITHUB_OUTPUT"
+          echo "Version: $NEW"
+
+      - name: Tag and push
+        if: github.event_name == 'push' || inputs.dry_run == false
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ steps.version.outputs.new_version }}"
+          git push origin "v${{ steps.version.outputs.new_version }}"
