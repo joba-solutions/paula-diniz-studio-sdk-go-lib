@@ -10,6 +10,16 @@ Module `github.com/joba-solutions/paula-diniz-studio-sdk-go-lib`, package `studi
 go get github.com/joba-solutions/paula-diniz-studio-sdk-go-lib
 ```
 
+## Release
+
+Merging to `main` computes the next version from the last tag and the commit messages, then pushes the tag. `#major` and `#minor` in the commit message select the increment; otherwise the patch increases. The tag is the published module, and a tag is never moved.
+
+Consumers pin the tag:
+
+```bash
+go get github.com/joba-solutions/paula-diniz-studio-sdk-go-lib@v0.1.0
+```
+
 ## Use
 
 ```go
