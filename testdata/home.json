@@ -1,0 +1,9 @@
+{
+  "links": {
+    "me": {
+      "href": "/me",
+      "rel": "me",
+      "httpMethod": "GET"
+    }
+  }
+}
