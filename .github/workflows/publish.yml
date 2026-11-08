@@ -14,29 +14,24 @@ on:
         default: true
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: publish
   cancel-in-progress: false
 
 jobs:
-  publish:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: true
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-
+      # Keep this list in sync with .github/workflows/ci.yml; the release gate equals CI.
       - name: Check formatting
         run: test -z "$(gofmt -l .)"
 
@@ -60,6 +55,20 @@ jobs:
       - name: Build
         run: go build ./...
 
+  tag:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
       - name: Compute next version
         id: version
         run: |
@@ -69,7 +78,7 @@ jobs:
           echo "Version: $NEW"
 
       - name: Tag and push
-        if: github.event_name == 'push' || inputs.dry_run == false
+        if: (github.event_name == 'push' || inputs.dry_run == false) && github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
