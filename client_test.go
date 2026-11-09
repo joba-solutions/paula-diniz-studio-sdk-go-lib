@@ -150,18 +150,24 @@ func TestFollow_SetsBearerToken(t *testing.T) {
 	}
 }
 
-func TestGet_ReadsHomeThenMe(t *testing.T) {
+func TestGet_ReadsHomeThenMeAndCategories(t *testing.T) {
 	t.Parallel()
-	fixture, err := os.ReadFile("testdata/home.json")
+	homeFixture, err := os.ReadFile("testdata/home.json")
 	if err != nil {
 		t.Fatalf("read testdata/home.json: %v", err)
+	}
+	categoriesFixture, err := os.ReadFile("testdata/categories.json")
+	if err != nil {
+		t.Fatalf("read testdata/categories.json: %v", err)
 	}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
-			writeJSON(t, w, http.StatusOK, string(fixture))
+			writeJSON(t, w, http.StatusOK, string(homeFixture))
 		case "/me":
 			writeJSON(t, w, http.StatusOK, `{"subject":"user_1","kind":"artist","links":{"self":{"href":"/me","rel":"self","httpMethod":"GET"}}}`)
+		case "/categories":
+			writeJSON(t, w, http.StatusOK, string(categoriesFixture))
 		default:
 			writeJSON(t, w, http.StatusNotFound, `{"message":"Not Found"}`)
 		}
@@ -181,6 +187,10 @@ func TestGet_ReadsHomeThenMe(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get[Me]() error = %v, want nil", err)
 	}
+	categories, err := Get[Categories](context.Background(), client, links.Categories)
+	if err != nil {
+		t.Fatalf("Get[Categories]() error = %v, want nil", err)
+	}
 
 	if got, want := me.Subject, "user_1"; got != want {
 		t.Errorf("Subject = %q, want %q", got, want)
@@ -191,6 +201,21 @@ func TestGet_ReadsHomeThenMe(t *testing.T) {
 	self := Link{Href: "/me", Rel: "self", HTTPMethod: "GET"}
 	if me.Links.Self != self {
 		t.Errorf("Links.Self = %+v, want %+v", me.Links.Self, self)
+	}
+	if got, want := len(categories.Categories), 5; got != want {
+		t.Fatalf("len(Categories) = %d, want %d", got, want)
+	}
+	first := Category{
+		ID:   "animals",
+		Slug: LocalizedText{PTBR: "animais", EN: "animals"},
+		Name: LocalizedText{PTBR: "Animais", EN: "Animals"},
+	}
+	if categories.Categories[0] != first {
+		t.Errorf("Categories[0] = %+v, want %+v", categories.Categories[0], first)
+	}
+	categoriesSelf := Link{Href: "/categories", Rel: "self", HTTPMethod: "GET"}
+	if categories.Links.Self != categoriesSelf {
+		t.Errorf("Links.Self = %+v, want %+v", categories.Links.Self, categoriesSelf)
 	}
 }
 

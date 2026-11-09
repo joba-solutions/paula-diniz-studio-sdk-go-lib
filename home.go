@@ -15,7 +15,8 @@ var HomeLink = Link{Href: "/", Rel: "home", HTTPMethod: http.MethodGet}
 
 // HomeLinks are the home's links, resolved into the entry points a caller follows.
 type HomeLinks struct {
-	Me Link
+	Me         Link
+	Categories Link
 }
 
 // ResolveHome requires every link the home promises, failing when the server drops one.
@@ -24,5 +25,9 @@ func ResolveHome(home Home) (HomeLinks, error) {
 	if !ok {
 		return HomeLinks{}, errors.New(`studio: home document missing link "me"`)
 	}
-	return HomeLinks{Me: me}, nil
+	categories, ok := home.Links["categories"]
+	if !ok {
+		return HomeLinks{}, errors.New(`studio: home document missing link "categories"`)
+	}
+	return HomeLinks{Me: me, Categories: categories}, nil
 }
