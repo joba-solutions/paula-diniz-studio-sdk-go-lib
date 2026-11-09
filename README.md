@@ -57,6 +57,17 @@ func readMe(ctx context.Context) (studio.Me, error) {
 }
 ```
 
+`ResolveHome` requires both the `me` and `categories` links and fails when the home drops either.
+`studio.Categories` is the fixed category list:
+
+```go
+categories, err := studio.Get[studio.Categories](ctx, client, links.Categories)
+```
+
+Each `studio.Category` carries an `id`, a `slug`, and a `name`. `slug` and `name` are each a
+`studio.LocalizedText` with `PTBR` and `EN` values. The five categories come in the API's fixed
+order. The collection has a `self` link and no per-item links.
+
 `Base` is the API origin. Links carry only paths, and the client joins them to `Base`.
 
 `Client.Follow` returns the response for the caller to read and close. `Get[T]` follows the link

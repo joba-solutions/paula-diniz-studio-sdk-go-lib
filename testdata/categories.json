@@ -1,0 +1,66 @@
+{
+  "categories": [
+    {
+      "id": "animals",
+      "slug": {
+        "ptBR": "animais",
+        "en": "animals"
+      },
+      "name": {
+        "ptBR": "Animais",
+        "en": "Animals"
+      }
+    },
+    {
+      "id": "portraits",
+      "slug": {
+        "ptBR": "retratos",
+        "en": "portraits"
+      },
+      "name": {
+        "ptBR": "Retratos",
+        "en": "Portraits"
+      }
+    },
+    {
+      "id": "landscapes",
+      "slug": {
+        "ptBR": "paisagens",
+        "en": "landscapes"
+      },
+      "name": {
+        "ptBR": "Paisagens",
+        "en": "Landscapes"
+      }
+    },
+    {
+      "id": "murals",
+      "slug": {
+        "ptBR": "murais",
+        "en": "murals"
+      },
+      "name": {
+        "ptBR": "Murais",
+        "en": "Murals"
+      }
+    },
+    {
+      "id": "other",
+      "slug": {
+        "ptBR": "outros",
+        "en": "other"
+      },
+      "name": {
+        "ptBR": "Outros",
+        "en": "Other works"
+      }
+    }
+  ],
+  "links": {
+    "self": {
+      "href": "/categories",
+      "rel": "self",
+      "httpMethod": "GET"
+    }
+  }
+}

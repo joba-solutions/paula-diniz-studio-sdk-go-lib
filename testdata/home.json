@@ -4,6 +4,11 @@
       "href": "/me",
       "rel": "me",
       "httpMethod": "GET"
+    },
+    "categories": {
+      "href": "/categories",
+      "rel": "categories",
+      "httpMethod": "GET"
     }
   }
 }
