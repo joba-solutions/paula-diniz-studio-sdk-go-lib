@@ -29,12 +29,12 @@ type Dimensions struct {
 	DepthCm  *float64 `json:"depthCm,omitempty"`
 }
 
-// ArtworkImage references an uploaded image and the text that describes it.
+// ArtworkImage references an uploaded image. Alt text is required to publish and absent on a draft.
 type ArtworkImage struct {
-	MediaID   string        `json:"mediaId"`
-	Role      ImageRole     `json:"role"`
-	SortOrder int           `json:"sortOrder"`
-	AltText   LocalizedText `json:"altText"`
+	MediaID   string         `json:"mediaId"`
+	Role      ImageRole      `json:"role"`
+	SortOrder int            `json:"sortOrder"`
+	AltText   *LocalizedText `json:"altText,omitempty"`
 }
 
 // Exhibition is where the work was shown: a label and its story in both languages.
