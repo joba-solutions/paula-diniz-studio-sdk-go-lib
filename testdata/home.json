@@ -9,6 +9,22 @@
       "href": "/categories",
       "rel": "categories",
       "httpMethod": "GET"
+    },
+    "artworks": {
+      "href": "/artworks",
+      "rel": "artworks",
+      "httpMethod": "GET"
+    },
+    "artwork": {
+      "href": "/artworks/{id}",
+      "rel": "artwork",
+      "httpMethod": "GET",
+      "templated": true
+    },
+    "create-artwork": {
+      "href": "/artworks",
+      "rel": "create-artwork",
+      "httpMethod": "POST"
     }
   }
 }
