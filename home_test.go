@@ -7,37 +7,73 @@ import (
 	"testing"
 )
 
+func completeHomeLinks() map[string]Link {
+	return map[string]Link{
+		"me":             {Href: "/me", Rel: "me", HTTPMethod: "GET"},
+		"categories":     {Href: "/categories", Rel: "categories", HTTPMethod: "GET"},
+		"artworks":       {Href: "/artworks", Rel: "artworks", HTTPMethod: "GET"},
+		"artwork":        {Href: "/artworks/{id}", Rel: "artwork", HTTPMethod: "GET", Templated: true},
+		"create-artwork": {Href: "/artworks", Rel: "create-artwork", HTTPMethod: "POST"},
+	}
+}
+
+func homeWithout(rels ...string) map[string]Link {
+	links := completeHomeLinks()
+	for _, rel := range rels {
+		delete(links, rel)
+	}
+	return links
+}
+
 func TestResolveHome(t *testing.T) {
 	t.Parallel()
+	want := HomeLinks{
+		Me:            Link{Href: "/me", Rel: "me", HTTPMethod: "GET"},
+		Categories:    Link{Href: "/categories", Rel: "categories", HTTPMethod: "GET"},
+		Artworks:      Link{Href: "/artworks", Rel: "artworks", HTTPMethod: "GET"},
+		Artwork:       Link{Href: "/artworks/{id}", Rel: "artwork", HTTPMethod: "GET", Templated: true},
+		CreateArtwork: Link{Href: "/artworks", Rel: "create-artwork", HTTPMethod: "POST"},
+	}
 	tests := []struct {
-		name           string
-		home           Home
-		wantMe         Link
-		wantCategories Link
-		wantErr        string
+		name    string
+		home    Home
+		want    HomeLinks
+		wantErr string
 	}{
 		{
-			name: "returns the me and categories links",
-			home: Home{Links: map[string]Link{
-				"me":         {Href: "/me", Rel: "me", HTTPMethod: "GET"},
-				"categories": {Href: "/categories", Rel: "categories", HTTPMethod: "GET"},
-			}},
-			wantMe:         Link{Href: "/me", Rel: "me", HTTPMethod: "GET"},
-			wantCategories: Link{Href: "/categories", Rel: "categories", HTTPMethod: "GET"},
+			name: "returns every link the home promises",
+			home: Home{Links: completeHomeLinks()},
+			want: want,
 		},
 		{
-			name: "fails when the me link is missing",
-			home: Home{Links: map[string]Link{
-				"categories": {Href: "/categories", Rel: "categories", HTTPMethod: "GET"},
-			}},
+			name:    "fails when the me link is missing",
+			home:    Home{Links: homeWithout("me")},
 			wantErr: `home document missing link "me"`,
 		},
 		{
-			name: "fails when the categories link is missing",
-			home: Home{Links: map[string]Link{
-				"me": {Href: "/me", Rel: "me", HTTPMethod: "GET"},
-			}},
+			name:    "fails when the categories link is missing",
+			home:    Home{Links: homeWithout("categories")},
 			wantErr: `home document missing link "categories"`,
+		},
+		{
+			name:    "fails when the artworks link is missing",
+			home:    Home{Links: homeWithout("artworks")},
+			wantErr: `home document missing link "artworks"`,
+		},
+		{
+			name:    "fails when the artwork link is missing",
+			home:    Home{Links: homeWithout("artwork")},
+			wantErr: `home document missing link "artwork"`,
+		},
+		{
+			name:    "fails when the create-artwork link is missing",
+			home:    Home{Links: homeWithout("create-artwork")},
+			wantErr: `home document missing link "create-artwork"`,
+		},
+		{
+			name:    "reports the first missing link in home order",
+			home:    Home{Links: homeWithout("artworks", "artwork", "create-artwork")},
+			wantErr: `home document missing link "artworks"`,
 		},
 	}
 	for _, tt := range tests {
@@ -53,11 +89,8 @@ func TestResolveHome(t *testing.T) {
 			if err != nil {
 				t.Fatalf("ResolveHome() error = %v, want nil", err)
 			}
-			if links.Me != tt.wantMe {
-				t.Errorf("Me = %+v, want %+v", links.Me, tt.wantMe)
-			}
-			if links.Categories != tt.wantCategories {
-				t.Errorf("Categories = %+v, want %+v", links.Categories, tt.wantCategories)
+			if links != tt.want {
+				t.Errorf("HomeLinks = %+v, want %+v", links, tt.want)
 			}
 		})
 	}
@@ -73,20 +106,25 @@ func TestResolveHome_GoldenDocument(t *testing.T) {
 	if err := json.Unmarshal(data, &home); err != nil {
 		t.Fatalf("decode testdata/home.json: %v", err)
 	}
-	if got, want := len(home.Links), 2; got != want {
+	if got, want := len(home.Links), 5; got != want {
 		t.Errorf("len(Links) = %d, want %d", got, want)
 	}
 	links, err := ResolveHome(home)
 	if err != nil {
 		t.Fatalf("ResolveHome() error = %v, want nil", err)
 	}
-	wantMe := Link{Href: "/me", Rel: "me", HTTPMethod: "GET"}
-	if links.Me != wantMe {
-		t.Errorf("Me = %+v, want %+v", links.Me, wantMe)
+	want := HomeLinks{
+		Me:            Link{Href: "/me", Rel: "me", HTTPMethod: "GET"},
+		Categories:    Link{Href: "/categories", Rel: "categories", HTTPMethod: "GET"},
+		Artworks:      Link{Href: "/artworks", Rel: "artworks", HTTPMethod: "GET"},
+		Artwork:       Link{Href: "/artworks/{id}", Rel: "artwork", HTTPMethod: "GET", Templated: true},
+		CreateArtwork: Link{Href: "/artworks", Rel: "create-artwork", HTTPMethod: "POST"},
 	}
-	wantCategories := Link{Href: "/categories", Rel: "categories", HTTPMethod: "GET"}
-	if links.Categories != wantCategories {
-		t.Errorf("Categories = %+v, want %+v", links.Categories, wantCategories)
+	if links != want {
+		t.Errorf("HomeLinks = %+v, want %+v", links, want)
+	}
+	if !links.Artwork.Templated {
+		t.Error("Artwork link is not templated, want a templated link")
 	}
 	if _, ok := home.Links["self"]; ok {
 		t.Error(`home has a "self" link, want none`)

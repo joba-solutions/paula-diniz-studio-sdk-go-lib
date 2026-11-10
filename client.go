@@ -1,6 +1,7 @@
 package studio
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -74,14 +75,14 @@ func (c *Client) Follow(ctx context.Context, link Link) (*http.Response, error) 
 		return nil, fmt.Errorf("studio: link %q has no HTTP method", link.Rel)
 	}
 	if link.HTTPMethod != http.MethodGet {
-		return c.followOnce(ctx, link)
+		return c.followOnce(ctx, link, nil, "")
 	}
 	return c.followWithRetry(ctx, link)
 }
 
 func (c *Client) followWithRetry(ctx context.Context, link Link) (*http.Response, error) {
 	for attempt := 0; ; attempt++ {
-		response, err := c.followOnce(ctx, link)
+		response, err := c.followOnce(ctx, link, nil, "")
 		if err == nil {
 			return response, nil
 		}
@@ -96,7 +97,7 @@ func (c *Client) followWithRetry(ctx context.Context, link Link) (*http.Response
 	}
 }
 
-func (c *Client) followOnce(ctx context.Context, link Link) (*http.Response, error) {
+func (c *Client) followOnce(ctx context.Context, link Link, body any, idempotencyKey string) (*http.Response, error) {
 	reference, err := url.Parse(link.Href)
 	if err != nil {
 		return nil, fmt.Errorf("studio: parse link %q: %w", link.Rel, err)
@@ -105,7 +106,15 @@ func (c *Client) followOnce(ctx context.Context, link Link) (*http.Response, err
 	if requestURL.Scheme != c.base.Scheme || requestURL.Host != c.base.Host {
 		return nil, fmt.Errorf("studio: link %q points outside the API base", link.Rel)
 	}
-	request, err := http.NewRequestWithContext(ctx, link.HTTPMethod, requestURL.String(), nil)
+	var payload io.Reader
+	if body != nil {
+		encoded, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("studio: encode %q request: %w", link.Rel, err)
+		}
+		payload = bytes.NewReader(encoded)
+	}
+	request, err := http.NewRequestWithContext(ctx, link.HTTPMethod, requestURL.String(), payload)
 	if err != nil {
 		return nil, fmt.Errorf("studio: build request for %q: %w", link.Rel, err)
 	}
@@ -115,6 +124,12 @@ func (c *Client) followOnce(ctx context.Context, link Link) (*http.Response, err
 	}
 	request.Header.Set("Authorization", "Bearer "+token)
 	request.Header.Set("Accept", "application/json")
+	if body != nil {
+		request.Header.Set("Content-Type", "application/json")
+	}
+	if idempotencyKey != "" {
+		request.Header.Set("Idempotency-Key", idempotencyKey)
+	}
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {
@@ -149,9 +164,32 @@ func Get[T any](ctx context.Context, client *Client, link Link) (result T, err e
 			err = errors.Join(err, fmt.Errorf("studio: close %q response: %w", link.Rel, closeErr))
 		}
 	}()
-	decodeErr := json.NewDecoder(io.LimitReader(response.Body, maxResponseBytes)).Decode(&result)
-	if decodeErr != nil {
-		return result, fmt.Errorf("studio: decode %q response: %w", link.Rel, decodeErr)
+	return decodeBody[T](response.Body, link.Rel)
+}
+
+// mutate sends body as the link's JSON request and decodes the returned resource. A mutation
+// never retries: a write that already ran must not run twice.
+func mutate[T any](ctx context.Context, client *Client, link Link, body any, idempotencyKey string) (result T, err error) {
+	if link.HTTPMethod == "" || link.HTTPMethod == http.MethodGet {
+		return result, fmt.Errorf("studio: link %q is not a mutation", link.Rel)
+	}
+	response, err := client.followOnce(ctx, link, body, idempotencyKey)
+	if err != nil {
+		return result, err
+	}
+	defer func() {
+		closeErr := response.Body.Close()
+		if closeErr != nil {
+			err = errors.Join(err, fmt.Errorf("studio: close %q response: %w", link.Rel, closeErr))
+		}
+	}()
+	return decodeBody[T](response.Body, link.Rel)
+}
+
+func decodeBody[T any](body io.Reader, rel string) (T, error) {
+	var result T
+	if err := json.NewDecoder(io.LimitReader(body, maxResponseBytes)).Decode(&result); err != nil {
+		return result, fmt.Errorf("studio: decode %q response: %w", rel, err)
 	}
 	return result, nil
 }

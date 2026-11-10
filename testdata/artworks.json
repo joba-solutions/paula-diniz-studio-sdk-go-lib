@@ -1,0 +1,133 @@
+{
+  "artworks": [
+    {
+      "id": "01ARZ3NDEKTSV4RRFFQ69G5F02",
+      "version": 3,
+      "published": true,
+      "slug": {
+        "ptBR": "the-path",
+        "en": "the-path"
+      },
+      "title": {
+        "ptBR": "The Path",
+        "en": "The Path"
+      },
+      "year": 2023,
+      "medium": {
+        "ptBR": "Óleo sobre tela",
+        "en": "Oil on canvas"
+      },
+      "dimensions": {
+        "widthCm": 40,
+        "heightCm": 60,
+        "depthCm": 2.5
+      },
+      "categoryId": "animals",
+      "description": {
+        "ptBR": "A noite não tem pressa. O que atravessa a tela também não.",
+        "en": "The night is in no hurry. Neither is what crosses the canvas."
+      },
+      "images": [
+        {
+          "mediaId": "01ARZ3NDEKTSV4RRFFQ69G5M01",
+          "role": "main",
+          "sortOrder": 0,
+          "altText": {
+            "ptBR": "Um elefante caminha sob a lua, entre a poeira e a luz.",
+            "en": "An elephant walks under the moon, through dust and light."
+          }
+        },
+        {
+          "mediaId": "01ARZ3NDEKTSV4RRFFQ69G5M02",
+          "role": "detail",
+          "sortOrder": 1,
+          "altText": {
+            "ptBR": "Detalhe da pincelada na poeira levantada pelo elefante.",
+            "en": "Detail of the brushwork in the dust raised by the elephant."
+          }
+        }
+      ],
+      "sortOrder": 1,
+      "tags": {
+        "availability": "commission-only",
+        "priority": "medium"
+      },
+      "exhibition": {
+        "label": "Louvre 2023",
+        "text": {
+          "ptBR": "Obra exibida no Carrousel du Louvre, em outubro de 2023.",
+          "en": "Shown at the Carrousel du Louvre in October 2023."
+        }
+      },
+      "note": {
+        "ptBR": "Série Noite",
+        "en": "Night series"
+      },
+      "createdAt": "2026-11-01T12:00:00Z",
+      "updatedAt": "2026-11-08T09:30:00Z",
+      "createdBy": {
+        "subject": "user_1",
+        "kind": "artist"
+      },
+      "updatedBy": {
+        "subject": "user_1",
+        "kind": "artist"
+      },
+      "links": {
+        "self": {
+          "href": "/artworks/01ARZ3NDEKTSV4RRFFQ69G5F02",
+          "rel": "self",
+          "httpMethod": "GET"
+        },
+        "update": {
+          "href": "/artworks/01ARZ3NDEKTSV4RRFFQ69G5F02",
+          "rel": "update",
+          "httpMethod": "PATCH"
+        }
+      }
+    },
+    {
+      "id": "01ARZ3NDEKTSV4RRFFQ69G5F03",
+      "version": 1,
+      "published": false,
+      "images": [],
+      "sortOrder": 0,
+      "tags": {},
+      "createdAt": "2026-11-09T10:00:00Z",
+      "updatedAt": "2026-11-09T10:00:00Z",
+      "createdBy": {
+        "subject": "user_1",
+        "kind": "artist"
+      },
+      "updatedBy": {
+        "subject": "user_1",
+        "kind": "artist"
+      },
+      "links": {
+        "self": {
+          "href": "/artworks/01ARZ3NDEKTSV4RRFFQ69G5F03",
+          "rel": "self",
+          "httpMethod": "GET"
+        },
+        "update": {
+          "href": "/artworks/01ARZ3NDEKTSV4RRFFQ69G5F03",
+          "rel": "update",
+          "httpMethod": "PATCH"
+        }
+      }
+    }
+  ],
+  "nextCursor": "eyJwayI6IkFSVFdPUksjMDEifQ",
+  "links": {
+    "self": {
+      "href": "/artworks?limit=2",
+      "rel": "self",
+      "httpMethod": "GET"
+    },
+    "next": {
+      "href": "/artworks?cursor=eyJwayI6IkFSVFdPUksjMDEifQ&limit=2",
+      "rel": "next",
+      "httpMethod": "GET"
+    }
+  }
+}
