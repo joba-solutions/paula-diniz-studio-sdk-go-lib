@@ -90,7 +90,13 @@
       "id": "01ARZ3NDEKTSV4RRFFQ69G5F03",
       "version": 1,
       "published": false,
-      "images": [],
+      "images": [
+        {
+          "mediaId": "01ARZ3NDEKTSV4RRFFQ69G5M03",
+          "role": "main",
+          "sortOrder": 0
+        }
+      ],
       "sortOrder": 0,
       "tags": {},
       "createdAt": "2026-11-09T10:00:00Z",

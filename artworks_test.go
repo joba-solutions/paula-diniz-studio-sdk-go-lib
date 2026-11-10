@@ -89,7 +89,7 @@ func TestArtworkCollection_GoldenDocument(t *testing.T) {
 					MediaID:   "01ARZ3NDEKTSV4RRFFQ69G5M01",
 					Role:      ImageRoleMain,
 					SortOrder: 0,
-					AltText: LocalizedText{
+					AltText: &LocalizedText{
 						PTBR: "Um elefante caminha sob a lua, entre a poeira e a luz.",
 						EN:   "An elephant walks under the moon, through dust and light.",
 					},
@@ -98,7 +98,7 @@ func TestArtworkCollection_GoldenDocument(t *testing.T) {
 					MediaID:   "01ARZ3NDEKTSV4RRFFQ69G5M02",
 					Role:      ImageRoleDetail,
 					SortOrder: 1,
-					AltText: LocalizedText{
+					AltText: &LocalizedText{
 						PTBR: "Detalhe da pincelada na poeira levantada pelo elefante.",
 						EN:   "Detail of the brushwork in the dust raised by the elephant.",
 					},
@@ -130,7 +130,13 @@ func TestArtworkCollection_GoldenDocument(t *testing.T) {
 			ID:        secondID,
 			Version:   1,
 			Published: false,
-			Images:    []ArtworkImage{},
+			Images: []ArtworkImage{
+				{
+					MediaID:   "01ARZ3NDEKTSV4RRFFQ69G5M03",
+					Role:      ImageRoleMain,
+					SortOrder: 0,
+				},
+			},
 			SortOrder: 0,
 			Tags:      map[string]string{},
 			CreatedAt: time.Date(2026, 11, 9, 10, 0, 0, 0, time.UTC),
@@ -160,6 +166,58 @@ func TestArtworkCollection_GoldenDocument(t *testing.T) {
 	}
 	if got, want := collection.Links.Next.Rel, "next"; got != want {
 		t.Errorf("Links.Next.Rel = %q, want %q", got, want)
+	}
+}
+
+func TestArtworkImage_AltTextRoundTrip(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		wire     string
+		wantAlt  *LocalizedText
+		wantText string
+	}{
+		{
+			name: "a draft image without alt text",
+			wire: `{"mediaId":"01ARZ3NDEKTSV4RRFFQ69G5M03","role":"main","sortOrder":0}`,
+		},
+		{
+			name:     "an image with alt text",
+			wire:     `{"mediaId":"01ARZ3NDEKTSV4RRFFQ69G5M01","role":"main","sortOrder":0,"altText":{"ptBR":"Um elefante caminha sob a lua.","en":"An elephant walks under the moon."}}`,
+			wantAlt:  &LocalizedText{PTBR: "Um elefante caminha sob a lua.", EN: "An elephant walks under the moon."},
+			wantText: `{"ptBR":"Um elefante caminha sob a lua.","en":"An elephant walks under the moon."}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var image ArtworkImage
+			if err := json.Unmarshal([]byte(tt.wire), &image); err != nil {
+				t.Fatalf("Unmarshal() error = %v, want nil", err)
+			}
+			if !reflect.DeepEqual(image.AltText, tt.wantAlt) {
+				t.Errorf("AltText = %+v, want %+v", image.AltText, tt.wantAlt)
+			}
+
+			encoded, err := json.Marshal(image)
+			if err != nil {
+				t.Fatalf("Marshal() error = %v, want nil", err)
+			}
+			fields := decodeFields(t, encoded)
+			got, ok := fields["altText"]
+			if tt.wantText == "" {
+				if ok {
+					t.Errorf("body[\"altText\"] = %s, want the field absent", got)
+				}
+				return
+			}
+			if !ok {
+				t.Fatalf("body[\"altText\"] is absent, want %s", tt.wantText)
+			}
+			if string(got) != tt.wantText {
+				t.Errorf("body[\"altText\"] = %s, want %s", got, tt.wantText)
+			}
+		})
 	}
 }
 
@@ -563,8 +621,19 @@ func TestArtworkPatch_DistinguishesAbsentFromNull(t *testing.T) {
 				t.Errorf("body[%q] = %s, want %s", name, got, want)
 			}
 		}
-		if _, ok := fields["images"]; !ok {
-			t.Error("body[\"images\"] is absent, want the replacement list")
+		rawImages, ok := fields["images"]
+		if !ok {
+			t.Fatal("body[\"images\"] is absent, want the replacement list")
+		}
+		var images []map[string]json.RawMessage
+		if err := json.Unmarshal(rawImages, &images); err != nil {
+			t.Fatalf("decode body[\"images\"]: %v", err)
+		}
+		if len(images) != 1 {
+			t.Fatalf("len(body[\"images\"]) = %d, want 1", len(images))
+		}
+		if _, ok := images[0]["altText"]; ok {
+			t.Error("body[\"images\"][0][\"altText\"] is present, want it absent on an image without alt text")
 		}
 		for _, name := range []string{"medium", "description"} {
 			if _, ok := fields[name]; ok {
